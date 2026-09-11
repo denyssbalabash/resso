@@ -73,6 +73,7 @@ export function useResso() {
   const [profile, setProfile] = useState<UserProfile | null>(globalProfile);
   const [isLoading, setIsLoading] = useState(globalLoading);
   const [error, setError] = useState(globalError);
+  const [localOverrides, setLocalOverrides] = useState<Partial<RessoState>>({});
 
   useEffect(() => {
     const sync = () => {
@@ -110,17 +111,25 @@ export function useResso() {
     }
   }, []);
 
-  const state = deriveRessoState(profile);
-  const spinsLeft = profile?.spinsLeft ?? 0;
+  const state = { ...deriveRessoState(profile), ...localOverrides };
+  const spinsLeft = (profile?.spinsLeft ?? 0) + (localOverrides.tasks?.length ?? 0) - (localOverrides.spinsUsed ?? 0);
 
   const update = useCallback((patch: Partial<RessoState>) => {
-    // We mock local update for things like onboarded / locationId since they aren't in Firestore yet
-    // In a full implementation, you'd add these to UserProfile and update via a server function
-    console.warn("Local update called, but we are using remote state.", patch);
+    setLocalOverrides((prev) => ({ ...prev, ...patch }));
   }, []);
 
   const completeTask = useCallback(async (id: TaskId) => {
-    if (!profile) return;
+    if (!profile) {
+      // Local mock for non-Telegram environments
+      setLocalOverrides((prev) => {
+        const currentTasks = prev.tasks || state.tasks;
+        if (!currentTasks.includes(id)) {
+          return { ...prev, tasks: [...currentTasks, id] };
+        }
+        return prev;
+      });
+      return;
+    }
     try {
       const updatedProfile = await completeTaskOnServer({
         data: {
@@ -133,11 +142,19 @@ export function useResso() {
     } catch (err) {
       console.error("Failed to complete task:", err);
     }
-  }, [profile]);
+  }, [profile, state.tasks]);
 
   const addPrize = useCallback(async (prize: WonPrize) => {
-    // Handled mostly by spinWheelOnServer now, this is just for local mocking
-  }, []);
+    if (!profile) {
+      setLocalOverrides((prev) => ({
+        ...prev,
+        prizes: [prize, ...(prev.prizes || state.prizes)],
+        spinsUsed: (prev.spinsUsed || state.spinsUsed) + 1,
+      }));
+      return;
+    }
+    // Remote handling is done by spinWheelOnServer mostly, but we can do local overrides if needed
+  }, [profile, state]);
 
   return { state, ready: !isLoading, spinsLeft, update, completeTask, addPrize, profile };
 }
