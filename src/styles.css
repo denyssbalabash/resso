@@ -1,0 +1,267 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Resso Coffee — dark loft design system.
+ * Palette: charcoal #0F0F0F / warm graphite #1A1A18 / amber #FFAF00 / bone #F5F2EC
+ * Type: Space Grotesk (display) + DM Sans (body)
+ * All colors are oklch and exposed as semantic tokens only.
+ */
+
+@theme inline {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Space Grotesk", ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 10px);
+  --radius-md: calc(var(--radius) - 6px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
+  --radius-3xl: calc(var(--radius) + 20px);
+  --radius-4xl: calc(var(--radius) + 30px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --shadow-lift: 0 18px 40px -24px oklch(0 0 0 / 0.9);
+  --shadow-amber: 0 16px 44px -18px color-mix(in oklab, var(--primary) 45%, transparent);
+}
+
+:root {
+  --radius: 1.25rem;
+
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.958 0.008 85);
+  --surface: oklch(0.196 0.004 80);
+  --surface-strong: oklch(0.245 0.006 80);
+
+  --card: oklch(0.196 0.004 80);
+  --card-foreground: oklch(0.958 0.008 85);
+  --popover: oklch(0.176 0.004 80);
+  --popover-foreground: oklch(0.958 0.008 85);
+
+  --primary: oklch(0.81 0.166 76.5);
+  --primary-foreground: oklch(0.145 0 0);
+  --primary-soft: color-mix(in oklab, oklch(0.81 0.166 76.5) 14%, transparent);
+
+  --secondary: oklch(0.245 0.006 80);
+  --secondary-foreground: oklch(0.958 0.008 85);
+  --muted: oklch(0.245 0.006 80);
+  --muted-foreground: oklch(0.686 0.008 85);
+  --accent: oklch(0.81 0.166 76.5);
+  --accent-foreground: oklch(0.145 0 0);
+  --destructive: oklch(0.63 0.21 25);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.81 0.166 76.5);
+
+  --chart-1: oklch(0.81 0.166 76.5);
+  --chart-2: oklch(0.72 0.1 60);
+  --chart-3: oklch(0.55 0.05 70);
+  --chart-4: oklch(0.88 0.12 90);
+  --chart-5: oklch(0.42 0.03 70);
+
+  --sidebar: oklch(0.176 0.004 80);
+  --sidebar-foreground: oklch(0.958 0.008 85);
+  --sidebar-primary: oklch(0.81 0.166 76.5);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
+  --sidebar-accent: oklch(0.245 0.006 80);
+  --sidebar-accent-foreground: oklch(0.958 0.008 85);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.81 0.166 76.5);
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+/* ---------- utilities ---------- */
+
+@utility loft-grain {
+  background-image:
+    radial-gradient(
+      110% 55% at 50% -10%,
+      color-mix(in oklab, var(--primary) 12%, transparent),
+      transparent 65%
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* Soft raised panel used across the bento grid */
+@utility panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--surface-strong) 90%, transparent),
+      var(--surface)
+    );
+  box-shadow:
+    inset 0 1px 0 0 oklch(1 0 0 / 0.06),
+    var(--shadow-lift);
+}
+
+@utility panel-amber {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(
+      150deg,
+      color-mix(in oklab, var(--primary) 22%, var(--surface)),
+      var(--surface)
+    );
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, var(--primary) 35%, transparent),
+    var(--shadow-lift);
+}
+
+@utility hairline {
+  border: 1px solid var(--border);
+}
+
+@utility press {
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+  &:active {
+    transform: scale(0.975);
+  }
+}
+
+@utility text-eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+@utility amber-glow {
+  box-shadow: var(--shadow-amber);
+}
+
+@keyframes resso-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes resso-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px color-mix(in oklab, var(--primary) 0%, transparent);
+  }
+}
+
+@keyframes resso-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes resso-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-float {
+  animation: resso-float 5s ease-in-out infinite;
+}
+
+@utility animate-pulse-ring {
+  animation: resso-pulse-ring 1.8s ease-out infinite;
+}
+
+@utility animate-marquee {
+  animation: resso-marquee 22s linear infinite;
+}
+
+@utility animate-rise {
+  animation: resso-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}

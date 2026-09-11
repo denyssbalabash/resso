@@ -1,0 +1,6 @@
+{
+  "name": "Resso Coffee",
+  "description": "Telegram mini app кавʼярні Resso: заклади, Instagram, колесо фортуни.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
