@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { TaskId } from "./resso-data";
-import { authenticateTelegramUser, completeTaskOnServer, spinWheelOnServer, type UserProfile } from "./server-functions";
+import { authenticateTelegramUser, completeOnboardingOnServer, completeTaskOnServer, spinWheelOnServer, type UserProfile } from "./server-functions";
 
 // Global state holding the remote user profile
 const listeners = new Set<() => void>();
@@ -51,7 +51,7 @@ function deriveRessoState(profile: UserProfile | null): RessoState {
   const spinsUsed = Math.max(0, totalSpinsAvailable - profile.spinsLeft);
   
   return {
-    onboarded: true,
+    onboarded: profile.hasOnboarded ?? true,
     locationId: null,
     tasks,
     spinsUsed,
@@ -144,6 +144,19 @@ export function useResso() {
     }
   }, [profile, state.tasks]);
 
+  const completeOnboarding = useCallback(async () => {
+    update({ onboarded: true });
+    if (profile) {
+      try {
+        await completeOnboardingOnServer({ data: { telegramId: profile.telegramId } });
+        globalProfile = { ...profile, hasOnboarded: true };
+        notify();
+      } catch (err) {
+        console.error("Failed to complete onboarding on server:", err);
+      }
+    }
+  }, [profile, update]);
+
   const addPrize = useCallback(async (prize: WonPrize) => {
     if (!profile) {
       setLocalOverrides((prev) => ({
@@ -156,5 +169,5 @@ export function useResso() {
     // Remote handling is done by spinWheelOnServer mostly, but we can do local overrides if needed
   }, [profile, state]);
 
-  return { state, ready: !isLoading, spinsLeft, update, completeTask, addPrize, profile };
+  return { state, ready: !isLoading, spinsLeft, update, completeTask, completeOnboarding, addPrize, profile };
 }

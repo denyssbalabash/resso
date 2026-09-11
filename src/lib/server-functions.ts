@@ -18,6 +18,7 @@ export type UserProfile = {
   hasSpunWheel: boolean;
   isIgSubscribed: boolean;
   isMapsReviewed: boolean;
+  hasOnboarded?: boolean;
   createdAt: string;
   lastActiveAt: string;
 };
@@ -83,6 +84,7 @@ export const authenticateTelegramUser = createServerFn({ method: "POST" })
         hasSpunWheel: false,
         isIgSubscribed: false,
         isMapsReviewed: false,
+        hasOnboarded: false,
         createdAt: now,
         lastActiveAt: now,
       };
@@ -91,6 +93,8 @@ export const authenticateTelegramUser = createServerFn({ method: "POST" })
       return newProfile;
     } else {
       // Update existing user profile
+      const existingData = userSnap.data() as Partial<UserProfile>;
+      const hasOnboarded = existingData.hasOnboarded ?? true; // legacy users are considered onboarded
       await userRef.update({
         lastActiveAt: now,
         firstName: telegramUser.first_name,
@@ -99,13 +103,27 @@ export const authenticateTelegramUser = createServerFn({ method: "POST" })
       });
       
       return {
-        ...userSnap.data(),
+        ...existingData,
+        hasOnboarded,
         lastActiveAt: now,
         firstName: telegramUser.first_name,
         username: telegramUser.username || null,
         photoUrl: telegramUser.photo_url || null,
       } as UserProfile;
     }
+  });
+
+export const completeOnboardingOnServer = createServerFn({ method: "POST" })
+  .validator((data: { telegramId: number }) => data)
+  .handler(async ({ data }) => {
+    const userIdStr = data.telegramId.toString();
+    const userRef = adminDb.collection("users").doc(userIdStr);
+    
+    await userRef.update({
+      hasOnboarded: true,
+    });
+    
+    return true;
   });
 
 export const spinWheelOnServer = createServerFn({ method: "POST" })

@@ -38,7 +38,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { user } = useTelegramUser();
-  const { state, ready, spinsLeft, update } = useResso();
+  const { state, ready, spinsLeft, update, completeOnboarding } = useResso();
 
   if (!ready) return <div className="min-h-screen bg-background" />;
 
@@ -78,7 +78,7 @@ function Index() {
 
         <button
           onClick={() => {
-            update({ onboarded: true });
+            completeOnboarding();
             toast.success("Кабінет активовано", {
               description: "Виконай завдання і крути колесо фортуни.",
             });
