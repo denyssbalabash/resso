@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Copy, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/resso/AppShell";
 import { PRIZES } from "@/lib/resso-data";
-import { generateCode, useResso, type WonPrize } from "@/lib/resso-store";
+import { useResso, type WonPrize } from "@/lib/resso-store";
+import { spinWheelOnServer } from "@/lib/server-functions";
 
 export const Route = createFileRoute("/wheel")({
   head: () => ({
@@ -27,37 +28,39 @@ export const Route = createFileRoute("/wheel")({
 const SEGMENT = 360 / PRIZES.length;
 
 function Wheel() {
-  const { state, ready, spinsLeft, addPrize } = useResso();
+  const { state, ready, spinsLeft, profile, update } = useResso();
   const [angle, setAngle] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<WonPrize | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const spin = () => {
-    if (spinning || spinsLeft <= 0) return;
-    // 1 виконане завдання -> печиво, 2 виконані -> шопер
-    const targetId = state.tasks.length >= 2 && state.spinsUsed >= 1 ? "tote" : "cookie";
-    const index = Math.max(0, PRIZES.findIndex((p) => p.id === targetId));
-    const prize = PRIZES[index]!;
-
+  const spin = async () => {
+    if (spinning || spinsLeft <= 0 || !profile) return;
+    
     setResult(null);
     setCopied(false);
     setSpinning(true);
-    const target =
-      angle + 360 * 5 + (360 - (index * SEGMENT + SEGMENT / 2) - (angle % 360));
-    setAngle(target);
-
-    window.setTimeout(() => {
-      const won: WonPrize = {
-        prizeId: prize.id,
-        label: prize.label,
-        code: generateCode(),
-        wonAt: new Date().toISOString(),
-      };
-      addPrize(won);
-      setResult(won);
+    
+    try {
+      const response = await spinWheelOnServer({ data: { telegramId: profile.telegramId } });
+      const prizeData = response.prize;
+      
+      const index = Math.max(0, PRIZES.findIndex((p) => p.id === prizeData.prizeId));
+      
+      const target =
+        angle + 360 * 5 + (360 - (index * SEGMENT + SEGMENT / 2) - (angle % 360));
+      setAngle(target);
+  
+      window.setTimeout(() => {
+        setResult(prizeData);
+        setSpinning(false);
+        // Force sync of state to reflect new spinsLeft
+        window.location.reload(); // simple way to re-fetch the global state or we could update it directly
+      }, 4200);
+    } catch (error) {
+      console.error("Spin failed:", error);
       setSpinning(false);
-    }, 4200);
+    }
   };
 
   if (!ready) return <AppShell title="Колесо"><div /></AppShell>;

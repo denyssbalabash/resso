@@ -50,9 +50,12 @@ function Index() {
 
         <div className="relative flex flex-1 flex-col items-center justify-center text-center">
           <img
-            src={logo.url}
+            src="/Vector.png"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/resso-logo.png";
+            }}
             alt="Resso Coffee"
-            className="animate-float h-24 w-24"
+            className="animate-float h-24 w-24 rounded-full object-contain drop-shadow-md"
           />
           <Eyebrow className="mt-10">вітаємо в resso</Eyebrow>
           <h1 className="animate-rise mt-3 text-[2rem] leading-[1.1] font-semibold">

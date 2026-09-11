@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import type { TaskId } from "./resso-data";
+import { authenticateTelegramUser, completeTaskOnServer, spinWheelOnServer, type UserProfile } from "./server-functions";
 
-// Єдина точка доступу до стану. Зараз — локальне сховище браузера,
-// пізніше замінюється на Lovable Cloud без змін в UI.
+// Global state holding the remote user profile
+const listeners = new Set<() => void>();
+let globalProfile: UserProfile | null = null;
+let globalLoading = true;
+let globalError: string | null = null;
 
-const KEY = "resso.state.v1";
+function notify() {
+  listeners.forEach((l) => l());
+}
 
 export type WonPrize = {
   prizeId: string;
@@ -13,12 +19,13 @@ export type WonPrize = {
   wonAt: string;
 };
 
+// Map remote profile back to local RessoState format for UI compatibility
 export type RessoState = {
   onboarded: boolean;
   locationId: string | null;
   tasks: TaskId[];
   spinsUsed: number;
-  prizes: WonPrize[];
+  prizes: WonPrize[]; // For now, we will simulate prizes locally or fetch from server later
 };
 
 const EMPTY: RessoState = {
@@ -29,23 +36,27 @@ const EMPTY: RessoState = {
   prizes: [],
 };
 
-function read(): RessoState {
-  if (typeof window === "undefined") return EMPTY;
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    return raw ? { ...EMPTY, ...(JSON.parse(raw) as RessoState) } : EMPTY;
-  } catch {
-    return EMPTY;
-  }
-}
-
-const listeners = new Set<() => void>();
-
-function write(next: RessoState) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(KEY, JSON.stringify(next));
-  }
-  listeners.forEach((l) => l());
+// Derived state
+function deriveRessoState(profile: UserProfile | null): RessoState {
+  if (!profile) return EMPTY;
+  
+  const tasks: TaskId[] = [];
+  if (profile.isIgSubscribed) tasks.push("instagram");
+  if (profile.isMapsReviewed) tasks.push("maps");
+  
+  // Calculate how many spins used. Initial free spin = 1.
+  // total spins = 1 (free) + tasks.length
+  // spinsUsed = total spins - spinsLeft
+  const totalSpinsAvailable = 1 + tasks.length;
+  const spinsUsed = Math.max(0, totalSpinsAvailable - profile.spinsLeft);
+  
+  return {
+    onboarded: true,
+    locationId: null,
+    tasks,
+    spinsUsed,
+    prizes: [], // Can be populated from Firestore if needed
+  };
 }
 
 export function generateCode() {
@@ -59,39 +70,74 @@ export function generateCode() {
 }
 
 export function useResso() {
-  const [state, setState] = useState<RessoState>(EMPTY);
-  const [ready, setReady] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(globalProfile);
+  const [isLoading, setIsLoading] = useState(globalLoading);
+  const [error, setError] = useState(globalError);
 
   useEffect(() => {
-    const sync = () => setState(read());
-    sync();
-    setReady(true);
+    const sync = () => {
+      setProfile(globalProfile);
+      setIsLoading(globalLoading);
+      setError(globalError);
+    };
     listeners.add(sync);
     return () => {
       listeners.delete(sync);
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && globalLoading && !globalProfile && !globalError) {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg?.initData) {
+        authenticateTelegramUser({ data: { initData: tg.initData } })
+          .then((p) => {
+            globalProfile = p;
+            globalLoading = false;
+            notify();
+          })
+          .catch((err) => {
+            console.error("Auth error:", err);
+            globalError = err.message;
+            globalLoading = false;
+            notify();
+          });
+      } else {
+        // Not in Telegram or no initData available
+        globalLoading = false;
+        notify();
+      }
+    }
+  }, []);
+
+  const state = deriveRessoState(profile);
+  const spinsLeft = profile?.spinsLeft ?? 0;
+
   const update = useCallback((patch: Partial<RessoState>) => {
-    write({ ...read(), ...patch });
+    // We mock local update for things like onboarded / locationId since they aren't in Firestore yet
+    // In a full implementation, you'd add these to UserProfile and update via a server function
+    console.warn("Local update called, but we are using remote state.", patch);
   }, []);
 
-  const completeTask = useCallback((id: TaskId) => {
-    const current = read();
-    if (current.tasks.includes(id)) return;
-    write({ ...current, tasks: [...current.tasks, id] });
+  const completeTask = useCallback(async (id: TaskId) => {
+    if (!profile) return;
+    try {
+      const updatedProfile = await completeTaskOnServer({
+        data: {
+          telegramId: profile.telegramId,
+          taskType: id as "instagram" | "maps",
+        }
+      });
+      globalProfile = updatedProfile;
+      notify();
+    } catch (err) {
+      console.error("Failed to complete task:", err);
+    }
+  }, [profile]);
+
+  const addPrize = useCallback(async (prize: WonPrize) => {
+    // Handled mostly by spinWheelOnServer now, this is just for local mocking
   }, []);
 
-  const addPrize = useCallback((prize: WonPrize) => {
-    const current = read();
-    write({
-      ...current,
-      spinsUsed: current.spinsUsed + 1,
-      prizes: [prize, ...current.prizes],
-    });
-  }, []);
-
-  const spinsLeft = Math.max(0, state.tasks.length - state.spinsUsed);
-
-  return { state, ready, spinsLeft, update, completeTask, addPrize };
+  return { state, ready: !isLoading, spinsLeft, update, completeTask, addPrize, profile };
 }

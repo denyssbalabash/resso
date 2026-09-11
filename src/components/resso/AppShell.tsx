@@ -27,7 +27,14 @@ export function AppShell({
       <header className="sticky top-0 z-20 bg-gradient-to-b from-background via-background/90 to-transparent">
         <div className="mx-auto flex h-16 w-full max-w-md items-center gap-3 px-5">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src={logo.url} alt="Resso Coffee" className="h-9 w-9" />
+            <img
+              src="/Vector.png"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/resso-logo.png";
+              }}
+              alt="Resso Coffee"
+              className="h-9 w-9 shrink-0 rounded-full object-contain shadow-sm"
+            />
             <span className="font-display text-[13px] font-medium tracking-[0.3em] uppercase">
               {title ?? "resso"}
             </span>
